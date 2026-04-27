@@ -1112,30 +1112,36 @@ function uploadRecCSV(e) {
     previewBody.innerHTML = '';
     let hasData = false;
     for (let i = 1; i < lines.length; i++) {
-      const cols = lines[i].split(',').map(c => c.trim());
+      const cols   = lines[i].split(',').map(c => c.trim());
       if (cols.length < 2) continue;
       const name   = cols[0];
       const start  = cols[1];
-      const end    = cols[2] || cols[1];
+      const endRaw = cols[2] || '';
       const reason = cols[3] || '';
       const emp    = employees.find(e => e.name === name);
-      const days   = (start && end) ? calcWorkdays(start, end) : null;
+
+      // 반차 판별: 사유가 "반차" 이거나 종료일이 없으면서 사유에 반차 포함
+      const isHalf = reason.trim() === '반차' || reason.includes('반차');
+      const type   = isHalf ? 'half' : 'full';
+      const end    = isHalf ? start : (endRaw || start);
+      const days   = isHalf ? 0.5 : (start && end ? calcWorkdays(start, end) : null);
+
       let status, statusColor;
-      if (!emp)          { status = '직원 없음'; statusColor = '#A32D2D'; }
-      else if (!days)    { status = '날짜 오류'; statusColor = '#A32D2D'; }
+      if (!emp)              { status = '직원 없음'; statusColor = '#A32D2D'; }
+      else if (!start)       { status = '날짜 오류'; statusColor = '#A32D2D'; }
       else {
         const { total } = calcLeave(emp.joinDate);
         const rem = total - usedDays(emp.id) - settledDays(emp.id);
-        if (days > rem)  { status = `잔여 부족(${rem}일)`; statusColor = '#854F0B'; }
-        else             { status = '✓ 등록 가능'; statusColor = '#3B6D11'; }
+        if (days > rem)    { status = `잔여 부족(${rem}일)`; statusColor = '#854F0B'; }
+        else               { status = '✓ 등록 가능'; statusColor = '#3B6D11'; }
       }
-      csvPendingRows.push({ name, start, end, reason, emp, days });
+      csvPendingRows.push({ name, start, end, reason, emp, days, type });
       previewBody.innerHTML += `<tr>
         <td style="color:#aaa; font-size:12px;">${i}</td>
         <td style="font-weight:600;">${name}</td>
         <td style="font-size:12px;">${start}</td>
-        <td style="font-size:12px;">${end !== start ? end : '—'}</td>
-        <td>${days || '—'}일</td>
+        <td style="font-size:12px;">${!isHalf && end !== start ? end : '—'}</td>
+        <td>${isHalf ? '<span class="badge badge-amber">반차</span>' : `${days||'—'}일`}</td>
         <td style="color:#888;">${reason || '—'}</td>
         <td style="color:${statusColor}; font-size:12px; font-weight:500;">${status}</td>
       </tr>`;
@@ -1154,7 +1160,7 @@ function confirmCSVUpload() {
     const { total } = calcLeave(row.emp.joinDate);
     const rem = total - usedDays(row.emp.id) - settledDays(row.emp.id);
     if (row.days > rem) { skipped++; return; }
-    records.push({ id: Date.now().toString()+i, empId: row.emp.id, startDate: row.start, endDate: row.end, days: row.days, reason: row.reason, type: 'full' });
+    records.push({ id: Date.now().toString()+i, empId: row.emp.id, startDate: row.start, endDate: row.end, days: row.days, reason: row.reason, type: row.type });
     added++;
   });
   save(); render();
