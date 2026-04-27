@@ -1,0 +1,1398 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>직원 연차 관리 프로그램</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Noto Sans KR', sans-serif; background: #f5f5f3; color: #1a1a1a; min-height: 100vh; }
+
+header { background: #fff; border-bottom: 1px solid #e5e5e5; padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 56px; position: sticky; top: 0; z-index: 10; }
+header h1 { font-size: 16px; font-weight: 600; }
+header span { font-size: 12px; color: #888; }
+
+.container { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1rem; }
+.info-box { background: #E6F1FB; border-radius: 10px; padding: 10px 16px; font-size: 12px; color: #185FA5; margin-bottom: 1.25rem; line-height: 1.7; }
+
+.stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 1.25rem; }
+.stat-card { background: #fff; border-radius: 10px; border: 1px solid #ebebeb; padding: 1rem 1.25rem; }
+.stat-label { font-size: 12px; color: #888; margin-bottom: 4px; }
+.stat-val { font-size: 22px; font-weight: 600; }
+
+.tabs { display: flex; gap: 4px; margin-bottom: 1rem; background: #ebebeb; border-radius: 10px; padding: 4px; flex-wrap: wrap; }
+.tab { cursor: pointer; padding: 6px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; color: #888; border: none; background: transparent; transition: all 0.15s; font-family: inherit; white-space: nowrap; }
+.tab.active { background: #fff; color: #1a1a1a; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+
+.section { background: #fff; border-radius: 12px; border: 1px solid #ebebeb; padding: 1.25rem; margin-bottom: 1rem; }
+.section-title { font-size: 12px; font-weight: 600; color: #888; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.form-label { font-size: 12px; color: #888; margin-bottom: 4px; display: block; }
+.form-group { display: flex; flex-direction: column; }
+
+input, select { font-size: 14px; font-family: inherit; color: #1a1a1a; border: 1px solid #e0e0e0; border-radius: 8px; padding: 7px 11px; background: #fff; outline: none; transition: border-color 0.15s; }
+input:focus, select:focus { border-color: #aaa; }
+input::placeholder { color: #bbb; }
+input:disabled { background: #f5f5f3; color: #aaa; }
+
+.btn { cursor: pointer; padding: 7px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; border: 1px solid #e0e0e0; background: #fff; color: #1a1a1a; transition: background 0.15s; font-family: inherit; }
+.btn:hover { background: #f5f5f3; }
+.btn-primary { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+.btn-primary:hover { background: #333; }
+.btn-danger { color: #A32D2D; border-color: #F7C1C1; }
+.btn-danger:hover { background: #FCEBEB; }
+.btn-purple { color: #3C3489; border-color: #CECBF6; }
+.btn-purple:hover { background: #EEEDFE; }
+.btn-sm { padding: 4px 10px; font-size: 12px; }
+
+.badge { display: inline-block; font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 6px; }
+.badge-green  { background: #EAF3DE; color: #3B6D11; }
+.badge-red    { background: #FCEBEB; color: #A32D2D; }
+.badge-gray   { background: #F1EFE8; color: #5F5E5A; }
+.badge-blue   { background: #E6F1FB; color: #185FA5; }
+.badge-amber  { background: #FAEEDA; color: #854F0B; }
+.badge-purple { background: #EEEDFE; color: #3C3489; }
+.badge-teal   { background: #E1F5EE; color: #0F6E56; }
+
+.table-wrap { background: #fff; border-radius: 12px; border: 1px solid #ebebeb; overflow-x: auto; margin-bottom: 1rem; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; padding: 10px 12px; color: #888; font-weight: 500; border-bottom: 1px solid #ebebeb; white-space: nowrap; background: #fafafa; }
+td { padding: 10px 12px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #fafafa; }
+
+.days-preview { display: inline-block; font-size: 13px; font-weight: 600; color: #185FA5; background: #E6F1FB; border-radius: 6px; padding: 2px 10px; min-width: 48px; text-align: center; }
+
+.progress-bar { height: 6px; border-radius: 3px; background: #f0f0f0; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 3px; background: #1D9E75; transition: width 0.4s; }
+.progress-fill.warn { background: #EF9F27; }
+.progress-fill.danger { background: #E24B4A; }
+
+.empty { text-align: center; padding: 3rem; color: #bbb; font-size: 13px; }
+.hidden { display: none; }
+.settle-box { background: #EEEDFE; border-radius: 10px; padding: 10px 16px; font-size: 12px; color: #3C3489; margin-bottom: 1rem; line-height: 1.7; }
+
+/* 부서별 카드 */
+.dept-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+.dept-card { background: #fff; border-radius: 12px; border: 1px solid #ebebeb; overflow: hidden; }
+.dept-card-header { padding: 14px 16px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; justify-content: space-between; background: #fafafa; }
+.dept-card-title { font-size: 15px; font-weight: 600; }
+.dept-card-sub { font-size: 12px; color: #888; margin-top: 2px; }
+.dept-mini-stat { display: flex; gap: 12px; }
+.dept-mini-stat span { font-size: 12px; color: #888; }
+.dept-mini-stat strong { color: #1a1a1a; }
+.dept-emp-row { padding: 10px 16px; border-bottom: 1px solid #f5f5f3; display: flex; align-items: center; gap: 10px; }
+.dept-emp-row:last-child { border-bottom: none; }
+.dept-emp-name { font-size: 13px; font-weight: 600; min-width: 60px; }
+.dept-bar-wrap { flex: 1; }
+.dept-bar-labels { display: flex; justify-content: space-between; font-size: 11px; color: #aaa; margin-bottom: 3px; }
+.dept-progress { height: 8px; border-radius: 4px; background: #f0f0f0; overflow: hidden; }
+.dept-progress-fill { height: 100%; border-radius: 4px; background: #1D9E75; }
+.dept-progress-fill.warn { background: #EF9F27; }
+.dept-progress-fill.danger { background: #E24B4A; }
+.dept-rem { font-size: 13px; font-weight: 600; min-width: 42px; text-align: right; }
+
+/* 개인별 카드 */
+.person-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.person-card { background: #fff; border-radius: 12px; border: 1px solid #ebebeb; overflow: hidden; cursor: pointer; transition: box-shadow 0.15s; }
+.person-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+.person-card-header { padding: 16px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; gap: 12px; }
+.avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; flex-shrink: 0; }
+.person-info-name { font-size: 15px; font-weight: 600; }
+.person-info-sub { font-size: 12px; color: #888; margin-top: 2px; }
+.person-stats { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid #f0f0f0; }
+.person-stat { padding: 10px 12px; text-align: center; border-right: 1px solid #f5f5f3; }
+.person-stat:last-child { border-right: none; }
+.person-stat-label { font-size: 11px; color: #aaa; margin-bottom: 3px; }
+.person-stat-val { font-size: 16px; font-weight: 600; }
+.person-bar-wrap { padding: 12px 16px; }
+.person-bar-label { display: flex; justify-content: space-between; font-size: 11px; color: #aaa; margin-bottom: 5px; }
+.person-recent { padding: 0 16px 12px; }
+.person-recent-title { font-size: 11px; color: #aaa; margin-bottom: 6px; }
+.person-recent-item { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 4px 0; border-bottom: 1px solid #f5f5f3; }
+.person-recent-item:last-child { border-bottom: none; }
+
+/* 필터 바 */
+.filter-bar { display: flex; gap: 8px; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; }
+.filter-bar select { font-size: 13px; padding: 6px 10px; }
+
+/* 직원 자동완성 드롭다운 */
+.emp-search-wrap { position: relative; flex: 1; min-width: 130px; }
+.emp-search-wrap input { width: 100%; }
+.emp-dropdown { display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.1); z-index: 50; max-height: 200px; overflow-y: auto; }
+.emp-dropdown.show { display: block; }
+.emp-dropdown-item { padding: 9px 12px; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; }
+.emp-dropdown-item:hover, .emp-dropdown-item.active { background: #f5f5f3; }
+.emp-dropdown-item span { color: #888; font-size: 12px; }
+
+.bulk-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.bulk-table th { background: #fafafa; padding: 8px 10px; color: #888; font-weight: 500; border-bottom: 1px solid #ebebeb; white-space: nowrap; }
+.bulk-table td { padding: 5px 6px; border-bottom: 1px solid #f5f5f3; vertical-align: middle; }
+.bulk-table input, .bulk-table select { font-size: 13px; padding: 5px 8px; border: 1px solid #e0e0e0; border-radius: 6px; background: #fff; width: 100%; }
+.bulk-table input:focus, .bulk-table select:focus { border-color: #aaa; outline: none; }
+.bulk-row-status { width: 20px; text-align: center; font-size: 14px; }
+.tab-switch { display: flex; gap: 0; margin-bottom: 1rem; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; width: fit-content; }
+.tab-switch-btn { cursor: pointer; padding: 6px 16px; font-size: 13px; font-weight: 500; border: none; background: transparent; color: #888; font-family: inherit; transition: all 0.15s; }
+.tab-switch-btn.active { background: #1a1a1a; color: #fff; }
+
+.modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 100; align-items: center; justify-content: center; }
+.modal-bg.show { display: flex; }
+.modal { background: #fff; border-radius: 16px; border: 1px solid #e5e5e5; padding: 1.75rem; width: 480px; max-width: 95vw; max-height: 85vh; overflow-y: auto; box-shadow: 0 8px 32px rgba(0,0,0,0.12); }
+.modal-title { font-size: 16px; font-weight: 600; margin-bottom: 1.25rem; }
+
+.footer-bar { display: flex; gap: 8px; justify-content: flex-end; margin-top: 1rem; }
+
+@media (max-width: 600px) {
+  .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  header { padding: 0 1rem; }
+  .dept-grid, .person-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📋 직원 연차 관리</h1>
+  <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+    <span id="sync-status" style="font-size:12px; color:#888;">불러오는 중...</span>
+    <button onclick="loadAll()" style="font-size:12px; color:#888; background:none; border:1px solid #e0e0e0; border-radius:6px; cursor:pointer; padding:4px 10px;">↻ 새로고침</button>
+    <div style="display:flex; align-items:center; gap:6px;">
+      <label style="font-size:12px; color:#888; white-space:nowrap;">기준 날짜</label>
+      <input type="date" id="base-date" style="font-size:13px; padding:4px 8px; border:1px solid #e0e0e0; border-radius:8px; background:#fff; color:#1a1a1a; outline:none;" onchange="onBaseDateChange()" />
+      <button onclick="resetBaseDate()" style="font-size:12px; color:#888; background:none; border:none; cursor:pointer; padding:4px 6px; border-radius:6px;" title="오늘로 초기화">↺</button>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+  <div class="info-box">
+    근로기준법 기준 자동 계산 &nbsp;·&nbsp; 1년 미만: 매월 만근 시 1일 (최대 11일) &nbsp;·&nbsp; 1년 이상: 11일 + 15일 기본 + 2년마다 1일 추가 &nbsp;·&nbsp; 기준 날짜를 바꾸면 해당 시점의 누적 연차를 계산합니다.
+  </div>
+
+  <div class="stat-grid" id="stats"></div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('employees', this)">직원 관리</button>
+    <button class="tab" onclick="switchTab('dept', this)">부서별 현황</button>
+    <button class="tab" onclick="switchTab('person', this)">개인별 현황</button>
+    <button class="tab" onclick="switchTab('records', this)">사용 기록</button>
+    <button class="tab" onclick="switchTab('settlements', this)">정산 기록</button>
+  </div>
+
+  <!-- 직원 관리 -->
+  <div id="tab-employees">
+    <div class="section">
+      <div class="section-title">직원 추가</div>
+      <div class="row">
+        <input type="text" id="emp-name" placeholder="이름" style="flex:1; min-width:80px;" />
+        <div style="position:relative; flex:1; min-width:120px;">
+          <input type="text" id="emp-dept" placeholder="부서 선택 또는 입력" list="dept-list" autocomplete="off" style="width:100%;" />
+          <datalist id="dept-list"></datalist>
+        </div>
+        <input type="date" id="emp-join" style="width:160px;" />
+        <button class="btn btn-primary" onclick="addEmployee()">추가</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>이름</th><th>부서</th><th>입사일</th><th>근속</th>
+          <th>누적연차</th><th>사용</th><th>정산</th><th>잔여 / 사용률</th><th></th>
+        </tr></thead>
+        <tbody id="emp-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 부서별 현황 -->
+  <div id="tab-dept" class="hidden">
+    <div class="filter-bar">
+      <span style="font-size:13px; color:#888;">정렬:</span>
+      <select id="dept-sort" onchange="renderDept()">
+        <option value="name">부서명순</option>
+        <option value="headcount">인원순</option>
+        <option value="rem">잔여 연차순</option>
+      </select>
+    </div>
+    <div class="dept-grid" id="dept-grid"></div>
+  </div>
+
+  <!-- 개인별 현황 -->
+  <div id="tab-person" class="hidden">
+    <div class="filter-bar">
+      <input type="text" id="person-search" placeholder="이름 검색..." oninput="renderPerson()" style="width:140px; font-size:13px; padding:6px 10px;" />
+      <select id="person-dept-filter" onchange="renderPerson()">
+        <option value="">전체 부서</option>
+      </select>
+      <select id="person-sort" onchange="renderPerson()">
+        <option value="name">이름순</option>
+        <option value="rem">잔여 연차순</option>
+        <option value="join">입사일순</option>
+        <option value="pct">사용률순</option>
+      </select>
+    </div>
+    <div class="person-grid" id="person-grid"></div>
+  </div>
+
+  <!-- 사용 기록 -->
+  <div id="tab-records" class="hidden">
+
+    <div class="tab-switch">
+      <button class="tab-switch-btn active" onclick="switchRecMode('single', this)">단건 입력</button>
+      <button class="tab-switch-btn" onclick="switchRecMode('bulk', this)">일괄 입력</button>
+      <button class="tab-switch-btn" onclick="switchRecMode('csv', this)">CSV 업로드</button>
+    </div>
+
+    <!-- 단건 입력 -->
+    <div id="rec-mode-single">
+      <div class="section">
+        <div class="section-title">연차 사용 등록</div>
+        <div class="row" style="margin-bottom:10px; align-items:flex-end;">
+          <div class="form-group emp-search-wrap" style="flex:1; min-width:130px;">
+            <label class="form-label">직원</label>
+            <input type="text" id="rec-emp-input" placeholder="이름 입력 또는 선택" autocomplete="off"
+              oninput="filterEmpDropdown('rec')" onfocus="filterEmpDropdown('rec')" />
+            <input type="hidden" id="rec-emp" />
+            <div class="emp-dropdown" id="rec-emp-dropdown"></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">종류</label>
+            <select id="rec-type" onchange="onTypeChange()" style="width:90px;">
+              <option value="full">연차</option>
+              <option value="half">반차</option>
+            </select>
+          </div>
+          <div class="form-group" id="rec-start-group">
+            <label class="form-label">시작일</label>
+            <input type="date" id="rec-start" style="width:148px;" oninput="onDateChange()" />
+          </div>
+          <div style="padding-bottom:8px; color:#aaa;" id="rec-tilde">~</div>
+          <div class="form-group" id="rec-end-group">
+            <label class="form-label">종료일</label>
+            <input type="date" id="rec-end" style="width:148px;" oninput="onDateChange()" />
+          </div>
+          <div class="form-group" id="rec-half-group" style="display:none;">
+            <label class="form-label">날짜</label>
+            <input type="date" id="rec-half-date" style="width:148px;" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">일수</label>
+            <span class="days-preview" id="days-preview">—</span>
+          </div>
+        </div>
+        <div class="row">
+          <input type="text" id="rec-reason" placeholder="사유 (예: 개인사정, 가족행사...)" style="flex:1;" />
+          <button class="btn btn-primary" onclick="addRecord()">등록</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 일괄 입력 -->
+    <div id="rec-mode-bulk" class="hidden">
+      <div class="section">
+        <div class="section-title" style="margin-bottom:0.75rem;">여러 건 직접 입력</div>
+        <div style="overflow-x:auto;">
+          <table class="bulk-table">
+            <thead><tr>
+              <th style="width:36px;"></th>
+              <th style="min-width:120px;">직원</th>
+              <th style="width:80px;">종류</th>
+              <th style="width:130px;">시작일</th>
+              <th style="width:130px;">종료일</th>
+              <th style="min-width:140px;">사유</th>
+              <th style="width:50px;">일수</th>
+            </tr></thead>
+            <tbody id="bulk-body"></tbody>
+          </table>
+        </div>
+        <div style="display:flex; gap:8px; margin-top:10px;">
+          <button class="btn btn-sm" onclick="addBulkRow()">+ 행 추가</button>
+          <button class="btn btn-primary btn-sm" onclick="submitBulk()">전체 등록</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CSV 업로드 -->
+    <div id="rec-mode-csv" class="hidden">
+      <div class="section">
+        <div class="section-title">CSV 파일로 일괄 업로드</div>
+        <div style="background:#f5f5f3; border-radius:8px; padding:12px 16px; font-size:13px; margin-bottom:1rem; line-height:1.8;">
+          CSV 형식: <strong>이름, 시작일, 종료일, 사유</strong> (첫 줄은 헤더)<br>
+          예) 홍길동, 2025-03-10, 2025-03-12, 개인사정<br>
+          <button class="btn btn-sm" style="margin-top:6px;" onclick="downloadRecTemplate()">양식 다운로드</button>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <label class="btn btn-primary" style="cursor:pointer;">
+            파일 선택 <input type="file" accept=".csv" style="display:none;" onchange="uploadRecCSV(event)" />
+          </label>
+          <span id="csv-upload-status" style="font-size:13px; color:#888;"></span>
+        </div>
+        <div id="csv-preview-wrap" class="hidden" style="margin-top:1rem;">
+          <div style="font-size:13px; font-weight:600; margin-bottom:8px;">미리보기 — 확인 후 등록하세요</div>
+          <div style="overflow-x:auto;">
+            <table class="bulk-table">
+              <thead><tr><th></th><th>직원</th><th>시작일</th><th>종료일</th><th>일수</th><th>사유</th><th>상태</th></tr></thead>
+              <tbody id="csv-preview-body"></tbody>
+            </table>
+          </div>
+          <div style="margin-top:10px; display:flex; gap:8px;">
+            <button class="btn btn-primary" onclick="confirmCSVUpload()">등록 확정</button>
+            <button class="btn" onclick="cancelCSVUpload()">취소</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>이름</th><th>부서</th><th>기간</th><th>일수</th><th>사유</th><th></th></tr></thead>
+        <tbody id="rec-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 정산 기록 -->
+  <div id="tab-settlements" class="hidden">
+    <div class="settle-box">
+      비규칙적으로 미사용 연차를 수당으로 정산할 때 사용하세요. 정산된 일수는 잔여 연차에서 차감됩니다.
+    </div>
+    <div class="section">
+      <div class="section-title">정산 등록</div>
+      <div class="row" style="margin-bottom:8px;">
+        <div class="form-group emp-search-wrap" style="flex:1; min-width:140px;">
+          <input type="text" id="set-emp-input" placeholder="이름 입력 또는 선택" autocomplete="off"
+            oninput="filterEmpDropdown('set')" onfocus="filterEmpDropdown('set')" />
+          <input type="hidden" id="set-emp" />
+          <div class="emp-dropdown" id="set-emp-dropdown"></div>
+        </div>
+        <input type="date" id="set-date" style="width:160px;" />
+        <input type="number" id="set-days" placeholder="정산 일수" min="0.5" step="0.5" value="1" style="width:90px;" />
+      </div>
+      <div class="row">
+        <input type="text" id="set-note" placeholder="메모 (예: 2024년 하반기 정산)" style="flex:1;" />
+        <button class="btn btn-purple" onclick="addSettlement()">정산 등록</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>이름</th><th>부서</th><th>정산일</th><th>정산 일수</th><th>메모</th><th></th></tr></thead>
+        <tbody id="set-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="footer-bar">
+    <button class="btn" onclick="exportCSV()">CSV 내보내기</button>
+    <label class="btn" style="cursor:pointer;">CSV 불러오기 <input type="file" accept=".csv" style="display:none;" onchange="importCSV(event)" /></label>
+  </div>
+</div>
+
+<!-- 사용기록 수정 모달 -->
+<div class="modal-bg" id="rec-edit-modal" onclick="if(event.target===this)closeRecEditModal()">
+  <div class="modal" style="width:400px;">
+    <div class="modal-title">사용 기록 수정</div>
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div class="form-group">
+        <label class="form-label">종류</label>
+        <select id="rec-edit-type" onchange="onRecEditTypeChange()" style="width:100px;">
+          <option value="full">연차</option>
+          <option value="half">반차</option>
+        </select>
+      </div>
+      <div id="rec-edit-range-group" style="display:flex; gap:8px; align-items:center;">
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">시작일</label>
+          <input type="date" id="rec-edit-start" style="width:100%;" oninput="onRecEditDateChange()" />
+        </div>
+        <div style="padding-top:18px; color:#aaa;">~</div>
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">종료일</label>
+          <input type="date" id="rec-edit-end" style="width:100%;" oninput="onRecEditDateChange()" />
+        </div>
+      </div>
+      <div id="rec-edit-half-group" style="display:none;">
+        <div class="form-group">
+          <label class="form-label">날짜</label>
+          <input type="date" id="rec-edit-half-date" style="width:100%;" />
+        </div>
+      </div>
+      <div style="font-size:13px; color:#185FA5; background:#E6F1FB; border-radius:8px; padding:6px 12px;" id="rec-edit-days-preview"></div>
+      <div class="form-group">
+        <label class="form-label">사유</label>
+        <input type="text" id="rec-edit-reason" placeholder="사유" />
+      </div>
+    </div>
+    <div style="margin-top:1.25rem; display:flex; gap:8px; justify-content:flex-end;">
+      <button class="btn" onclick="closeRecEditModal()">취소</button>
+      <button class="btn btn-primary" onclick="saveRecEdit()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 정산기록 수정 모달 -->
+<div class="modal-bg" id="set-edit-modal" onclick="if(event.target===this)closeSetEditModal()">
+  <div class="modal" style="width:360px;">
+    <div class="modal-title">정산 기록 수정</div>
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div class="form-group">
+        <label class="form-label">정산일</label>
+        <input type="date" id="set-edit-date" style="width:100%;" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">정산 일수</label>
+        <input type="number" id="set-edit-days" min="0.5" step="0.5" style="width:100%;" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">메모</label>
+        <input type="text" id="set-edit-note" placeholder="메모" />
+      </div>
+    </div>
+    <div style="margin-top:1.25rem; display:flex; gap:8px; justify-content:flex-end;">
+      <button class="btn" onclick="closeSetEditModal()">취소</button>
+      <button class="btn btn-primary" onclick="saveSetEdit()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 수정 모달 -->
+<div class="modal-bg" id="edit-modal" onclick="if(event.target===this)closeEditModal()">
+  <div class="modal" style="width:360px;">
+    <div class="modal-title">직원 정보 수정</div>
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div class="form-group">
+        <label class="form-label">이름</label>
+        <input type="text" id="edit-name" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">부서</label>
+        <input type="text" id="edit-dept" list="dept-list" autocomplete="off" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">입사일</label>
+        <input type="date" id="edit-join" />
+      </div>
+    </div>
+    <div style="margin-top:1.25rem; display:flex; gap:8px; justify-content:flex-end;">
+      <button class="btn" onclick="closeEditModal()">취소</button>
+      <button class="btn btn-primary" onclick="saveEdit()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 개인 상세 모달 -->
+<div class="modal-bg" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-title" id="modal-title"></div>
+    <div id="modal-body"></div>
+    <div style="margin-top:1.25rem; text-align:right;">
+      <button class="btn" onclick="closeModal()">닫기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const todayStr = new Date().toISOString().split('T')[0];
+let baseDate = todayStr;
+
+document.getElementById('base-date').value = todayStr;
+
+function onBaseDateChange() {
+  baseDate = document.getElementById('base-date').value || todayStr;
+  render();
+}
+
+function resetBaseDate() {
+  baseDate = todayStr;
+  document.getElementById('base-date').value = todayStr;
+  render();
+}
+
+let employees   = [];
+let records     = [];
+let settlements = [];
+
+const SUPA_URL = 'https://cqhaoojnlxjyuiqlqnbc.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxaGFvb2pubHhqeXVpcWxxbmJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyNjgwMjQsImV4cCI6MjA5Mjg0NDAyNH0.CvlNz6fS7WhkyI35qxhcmh9vmYG3RSQXMf_6a5oRMfM';
+const HEADERS  = { 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` };
+
+function setStatus(msg, color) {
+  const el = document.getElementById('sync-status');
+  if (el) { el.textContent = msg; el.style.color = color || '#888'; }
+}
+
+async function sbFetch(path, options = {}) {
+  const res = await fetch(`${SUPA_URL}/rest/v1/${path}`, { headers: HEADERS, ...options });
+  if (!res.ok) throw new Error(await res.text());
+  return res.status === 204 ? null : res.json();
+}
+
+async function loadAll() {
+  setStatus('불러오는 중...', '#185FA5');
+  try {
+    const [emps, recs, sets] = await Promise.all([
+      sbFetch('employees?select=*&order=name'),
+      sbFetch('records?select=*&order=startDate'),
+      sbFetch('settlements?select=*&order=date'),
+    ]);
+    employees   = emps  || [];
+    records     = recs  || [];
+    settlements = sets  || [];
+    records.forEach(r => r.days = parseFloat(r.days) || 0);
+    settlements.forEach(s => s.days = parseFloat(s.days) || 0);
+    // 로컬 백업
+    localStorage.setItem('leave_emp', JSON.stringify(employees));
+    localStorage.setItem('leave_rec', JSON.stringify(records));
+    localStorage.setItem('leave_set', JSON.stringify(settlements));
+    setStatus('✓ 동기화됨', '#3B6D11');
+    render();
+  } catch(e) {
+    setStatus('⚠ 오프라인 — 로컬 데이터 사용 중', '#854F0B');
+    employees   = JSON.parse(localStorage.getItem('leave_emp') || '[]');
+    records     = JSON.parse(localStorage.getItem('leave_rec') || '[]');
+    settlements = JSON.parse(localStorage.getItem('leave_set') || '[]');
+    render();
+  }
+}
+
+async function save() {
+  // 로컬 백업
+  localStorage.setItem('leave_emp', JSON.stringify(employees));
+  localStorage.setItem('leave_rec', JSON.stringify(records));
+  localStorage.setItem('leave_set', JSON.stringify(settlements));
+  setStatus('저장 중...', '#185FA5');
+  try {
+    // 전체 삭제
+    await sbFetch('employees?id=gte.0',    { method: 'DELETE', headers: { ...HEADERS, 'Prefer': 'return=minimal' } }).catch(() => {});
+    await sbFetch('records?id=gte.0',      { method: 'DELETE', headers: { ...HEADERS, 'Prefer': 'return=minimal' } }).catch(() => {});
+    await sbFetch('settlements?id=gte.0',  { method: 'DELETE', headers: { ...HEADERS, 'Prefer': 'return=minimal' } }).catch(() => {});
+
+    // upsert로 삽입
+    if (employees.length)   await sbFetch('employees',   { method: 'POST', headers: { ...HEADERS, 'Prefer': 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify(employees) });
+    if (records.length)     await sbFetch('records',     { method: 'POST', headers: { ...HEADERS, 'Prefer': 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify(records) });
+    if (settlements.length) await sbFetch('settlements', { method: 'POST', headers: { ...HEADERS, 'Prefer': 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify(settlements) });
+    setStatus('✓ 동기화됨', '#3B6D11');
+  } catch(e) {
+    setStatus('⚠ 저장 실패 (로컬만 저장됨)', '#A32D2D');
+    console.error(e);
+  }
+}
+
+function calcLeave(joinDateStr) {
+  const base = new Date(baseDate);
+  const join = new Date(joinDateStr);
+  if (isNaN(join) || join > base) return { total: 0, tenure: '—' };
+  const totalDays = Math.floor((base - join) / 86400000);
+  const years     = Math.floor(totalDays / 365);
+  const months    = Math.floor((totalDays % 365) / 30);
+  let total = 0;
+  if (years < 1) {
+    total = Math.min(Math.floor(totalDays / 30), 11);
+  } else {
+    total = 11;
+    for (let y = 1; y <= years; y++) {
+      total += Math.min(15 + Math.floor((y - 1) / 2), 25);
+    }
+  }
+  const tenure = years > 0 ? `${years}년 ${months}개월` : `${Math.floor(totalDays/30)}개월`;
+  return { total, tenure };
+}
+
+function calcWorkdays(startStr, endStr) {
+  const start = new Date(startStr), end = new Date(endStr);
+  if (isNaN(start) || isNaN(end) || end < start) return null;
+  return Math.floor((end - start) / 86400000) + 1;
+}
+
+function onTypeChange() {
+  const isHalf = document.getElementById('rec-type').value === 'half';
+  document.getElementById('rec-start-group').style.display = isHalf ? 'none' : '';
+  document.getElementById('rec-tilde').style.display       = isHalf ? 'none' : '';
+  document.getElementById('rec-end-group').style.display   = isHalf ? 'none' : '';
+  document.getElementById('rec-half-group').style.display  = isHalf ? '' : 'none';
+  document.getElementById('days-preview').textContent      = isHalf ? '0.5일' : '—';
+}
+
+function onDateChange() {
+  const s = document.getElementById('rec-start').value;
+  const e = document.getElementById('rec-end').value;
+  const p = document.getElementById('days-preview');
+  if (s && e) { const d = calcWorkdays(s, e); p.textContent = d && d > 0 ? `${d}일` : '—'; }
+  else if (s) p.textContent = '1일';
+  else p.textContent = '—';
+}
+
+function usedDays(empId)    { return records.filter(r => r.empId === empId).reduce((s,r) => s+r.days, 0); }
+function settledDays(empId) { return settlements.filter(s => s.empId === empId).reduce((s,r) => s+r.days, 0); }
+
+// 아바타 색상 팔레트
+const avatarColors = [
+  {bg:'#E6F1FB', color:'#185FA5'},
+  {bg:'#EAF3DE', color:'#3B6D11'},
+  {bg:'#FAEEDA', color:'#854F0B'},
+  {bg:'#EEEDFE', color:'#3C3489'},
+  {bg:'#E1F5EE', color:'#0F6E56'},
+  {bg:'#FAECE7', color:'#993C1D'},
+  {bg:'#FBEAF0', color:'#993556'},
+];
+function avatarColor(name) { let h = 0; for (let c of name) h += c.charCodeAt(0); return avatarColors[h % avatarColors.length]; }
+
+function updateSelects() {
+  // 부서 datalist 업데이트
+  const depts = [...new Set(employees.map(e => e.dept))].sort();
+  const dl = document.getElementById('dept-list');
+  dl.innerHTML = depts.map(d => `<option value="${d}">`).join('');
+
+  // 개인별 부서 필터 업데이트
+  const pf = document.getElementById('person-dept-filter');
+  const pcur = pf.value;
+  pf.innerHTML = '<option value="">전체 부서</option>' + depts.map(d => `<option value="${d}" ${d===pcur?'selected':''}>${d}</option>`).join('');
+}
+
+function filterEmpDropdown(prefix) {
+  const input    = document.getElementById(`${prefix}-emp-input`);
+  const hidden   = document.getElementById(`${prefix}-emp`);
+  const dropdown = document.getElementById(`${prefix}-emp-dropdown`);
+  const q = input.value.trim().toLowerCase();
+
+  const filtered = employees.filter(e => !q || e.name.includes(q) || e.dept.toLowerCase().includes(q));
+
+  if (!filtered.length) { dropdown.classList.remove('show'); return; }
+
+  dropdown.innerHTML = filtered.map(e => {
+    const { total } = calcLeave(e.joinDate);
+    const rem = total - usedDays(e.id) - settledDays(e.id);
+    return `<div class="emp-dropdown-item" onmousedown="selectEmp('${prefix}','${e.id}','${e.name}')">
+      <strong>${e.name}</strong>
+      <span>${e.dept} · 잔여 ${rem}일</span>
+    </div>`;
+  }).join('');
+  dropdown.classList.add('show');
+}
+
+function selectEmp(prefix, id, name) {
+  document.getElementById(`${prefix}-emp-input`).value = name;
+  document.getElementById(`${prefix}-emp`).value = id;
+  document.getElementById(`${prefix}-emp-dropdown`).classList.remove('show');
+}
+
+// 드롭다운 외부 클릭 시 닫기
+document.addEventListener('click', e => {
+  ['rec','set'].forEach(prefix => {
+    const wrap = document.getElementById(`${prefix}-emp-input`)?.closest('.emp-search-wrap');
+    if (wrap && !wrap.contains(e.target)) {
+      document.getElementById(`${prefix}-emp-dropdown`)?.classList.remove('show');
+    }
+  });
+});
+
+function render() {
+  renderEmpTable();
+  updateSelects();
+  renderRecords();
+  renderSettlements();
+  renderStats();
+
+  const activeTab = document.querySelector('.tab.active');
+  if (activeTab) {
+    const label = activeTab.textContent.trim();
+    if (label === '부서별 현황') renderDept();
+    if (label === '개인별 현황') renderPerson();
+  }
+}
+
+function renderStats() {
+  const totalAccrued = employees.reduce((s,e) => s + calcLeave(e.joinDate).total, 0);
+  const totalUsed    = employees.reduce((s,e) => s + usedDays(e.id), 0);
+  const totalSettled = employees.reduce((s,e) => s + settledDays(e.id), 0);
+  document.getElementById('stats').innerHTML = `
+    <div class="stat-card"><div class="stat-label">전체 직원</div><div class="stat-val">${employees.length}명</div></div>
+    <div class="stat-card"><div class="stat-label">총 누적 연차</div><div class="stat-val">${totalAccrued}일</div></div>
+    <div class="stat-card"><div class="stat-label">사용 + 정산</div><div class="stat-val">${totalUsed+totalSettled}일</div></div>
+    <div class="stat-card"><div class="stat-label">총 잔여 연차</div><div class="stat-val">${totalAccrued-totalUsed-totalSettled}일</div></div>
+  `;
+}
+
+function renderEmpTable() {
+  const tbody = document.getElementById('emp-body');
+  if (!employees.length) { tbody.innerHTML = '<tr><td colspan="9" class="empty">직원을 추가하세요</td></tr>'; return; }
+  tbody.innerHTML = employees.map(e => {
+    const { total, tenure } = calcLeave(e.joinDate);
+    const u = usedDays(e.id), st = settledDays(e.id), rem = total - u - st;
+    const pct = total > 0 ? Math.round(((u+st)/total)*100) : 0;
+    const fillClass = pct >= 90 ? 'danger' : pct >= 70 ? 'warn' : '';
+    const remBadge  = rem <= 0 ? 'badge-red' : rem <= 3 ? 'badge-amber' : 'badge-green';
+    return `<tr>
+      <td style="font-weight:600;">${e.name}</td>
+      <td><span class="badge badge-gray">${e.dept}</span></td>
+      <td style="font-size:12px;color:#888;">${e.joinDate}</td>
+      <td style="font-size:12px;">${tenure}</td>
+      <td><span class="badge badge-blue">${total}일</span></td>
+      <td>${u}일</td>
+      <td>${st > 0 ? `<span class="badge badge-purple">${st}일</span>` : '<span style="color:#ccc;">—</span>'}</td>
+      <td style="min-width:110px;">
+        <span class="badge ${remBadge}">${rem}일</span>
+        <div class="progress-bar" style="margin-top:5px; width:80px;"><div class="progress-fill ${fillClass}" style="width:${Math.min(pct,100)}%"></div></div>
+        <div style="font-size:11px;color:#aaa;margin-top:2px;">${pct}%</div>
+      </td>
+      <td style="white-space:nowrap;">
+        <button class="btn btn-sm" onclick="showHistory('${e.id}')">내역</button>
+        <button class="btn btn-sm" onclick="openEditModal('${e.id}')">수정</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteEmployee('${e.id}')">삭제</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function renderDept() {
+  const sortBy = document.getElementById('dept-sort').value;
+  const depts  = [...new Set(employees.map(e => e.dept))];
+
+  const deptData = depts.map(dept => {
+    const emps = employees.filter(e => e.dept === dept);
+    const totalAccrued = emps.reduce((s,e) => s + calcLeave(e.joinDate).total, 0);
+    const totalUsed    = emps.reduce((s,e) => s + usedDays(e.id), 0);
+    const totalSettled = emps.reduce((s,e) => s + settledDays(e.id), 0);
+    const totalRem     = totalAccrued - totalUsed - totalSettled;
+    return { dept, emps, totalAccrued, totalUsed, totalSettled, totalRem };
+  });
+
+  if (sortBy === 'name')      deptData.sort((a,b) => a.dept.localeCompare(b.dept));
+  else if (sortBy === 'headcount') deptData.sort((a,b) => b.emps.length - a.emps.length);
+  else if (sortBy === 'rem')  deptData.sort((a,b) => b.totalRem - a.totalRem);
+
+  const grid = document.getElementById('dept-grid');
+  if (!deptData.length) { grid.innerHTML = '<div class="empty" style="grid-column:1/-1;">직원을 먼저 추가하세요</div>'; return; }
+
+  grid.innerHTML = deptData.map(({ dept, emps, totalAccrued, totalRem }) => {
+    const empRows = emps.map(e => {
+      const { total } = calcLeave(e.joinDate);
+      const u = usedDays(e.id), st = settledDays(e.id), rem = total - u - st;
+      const pct = total > 0 ? Math.round(((u+st)/total)*100) : 0;
+      const fillClass = pct >= 90 ? 'danger' : pct >= 70 ? 'warn' : '';
+      const remColor  = rem <= 0 ? '#A32D2D' : rem <= 3 ? '#854F0B' : '#3B6D11';
+      return `<div class="dept-emp-row">
+        <div class="dept-emp-name">${e.name}</div>
+        <div class="dept-bar-wrap">
+          <div class="dept-bar-labels"><span>사용 ${u+st}일</span><span>총 ${total}일</span></div>
+          <div class="dept-progress"><div class="dept-progress-fill ${fillClass}" style="width:${Math.min(pct,100)}%"></div></div>
+        </div>
+        <div class="dept-rem" style="color:${remColor};">${rem}일</div>
+      </div>`;
+    }).join('');
+
+    return `<div class="dept-card">
+      <div class="dept-card-header">
+        <div>
+          <div class="dept-card-title">${dept}</div>
+          <div class="dept-card-sub">${emps.length}명 · 잔여 합계 ${totalRem}일</div>
+        </div>
+        <span class="badge badge-blue">누적 ${totalAccrued}일</span>
+      </div>
+      ${empRows}
+    </div>`;
+  }).join('');
+}
+
+function renderPerson() {
+  const deptFilter = document.getElementById('person-dept-filter').value;
+  const sortBy     = document.getElementById('person-sort').value;
+  const searchQ    = (document.getElementById('person-search')?.value || '').trim().toLowerCase();
+
+  let emps = deptFilter ? employees.filter(e => e.dept === deptFilter) : [...employees];
+  if (searchQ) emps = emps.filter(e => e.name.includes(searchQ) || e.dept.toLowerCase().includes(searchQ));
+
+  emps = emps.map(e => {
+    const { total, tenure } = calcLeave(e.joinDate);
+    const u = usedDays(e.id), st = settledDays(e.id), rem = total - u - st;
+    const pct = total > 0 ? Math.round(((u+st)/total)*100) : 0;
+    return { ...e, total, tenure, u, st, rem, pct };
+  });
+
+  if (sortBy === 'name') emps.sort((a,b) => a.name.localeCompare(b.name));
+  else if (sortBy === 'rem')  emps.sort((a,b) => a.rem - b.rem);
+  else if (sortBy === 'join') emps.sort((a,b) => a.joinDate.localeCompare(b.joinDate));
+  else if (sortBy === 'pct')  emps.sort((a,b) => b.pct - a.pct);
+
+  const grid = document.getElementById('person-grid');
+  if (!emps.length) { grid.innerHTML = '<div class="empty" style="grid-column:1/-1;">해당 부서에 직원이 없습니다</div>'; return; }
+
+  grid.innerHTML = emps.map(e => {
+    const ac = avatarColor(e.name);
+    const initials = e.name.slice(0,2);
+    const fillClass = e.pct >= 90 ? 'danger' : e.pct >= 70 ? 'warn' : '';
+    const remColor  = e.rem <= 0 ? '#A32D2D' : e.rem <= 3 ? '#854F0B' : '#1D9E75';
+
+    // 최근 사용 기록 2건
+    const recentRecs = [...records.filter(r => r.empId === e.id)]
+      .sort((a,b) => b.startDate.localeCompare(a.startDate)).slice(0,2);
+
+    return `<div class="person-card" onclick="showHistory('${e.id}')">
+      <div class="person-card-header">
+        <div class="avatar" style="background:${ac.bg}; color:${ac.color};">${initials}</div>
+        <div>
+          <div class="person-info-name">${e.name}</div>
+          <div class="person-info-sub">${e.dept} · ${e.tenure}</div>
+        </div>
+      </div>
+      <div class="person-stats">
+        <div class="person-stat">
+          <div class="person-stat-label">누적</div>
+          <div class="person-stat-val">${e.total}</div>
+        </div>
+        <div class="person-stat">
+          <div class="person-stat-label">사용</div>
+          <div class="person-stat-val">${e.u}</div>
+        </div>
+        <div class="person-stat">
+          <div class="person-stat-label">정산</div>
+          <div class="person-stat-val" style="color:#3C3489;">${e.st}</div>
+        </div>
+        <div class="person-stat">
+          <div class="person-stat-label">잔여</div>
+          <div class="person-stat-val" style="color:${remColor};">${e.rem}</div>
+        </div>
+      </div>
+      <div class="person-bar-wrap">
+        <div class="person-bar-label"><span>사용률 ${e.pct}%</span><span>${e.u+e.st} / ${e.total}일</span></div>
+        <div class="progress-bar"><div class="progress-fill ${fillClass}" style="width:${Math.min(e.pct,100)}%"></div></div>
+      </div>
+      ${recentRecs.length ? `
+      <div class="person-recent">
+        <div class="person-recent-title">최근 사용</div>
+        ${recentRecs.map(r => `
+          <div class="person-recent-item">
+            <span class="badge badge-teal" style="font-size:11px;">${r.startDate}${r.startDate!==r.endDate?' ~ '+r.endDate:''}</span>
+            <span style="color:#888;">${r.days}일</span>
+            <span style="color:#aaa; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${r.reason||'—'}</span>
+          </div>
+        `).join('')}
+      </div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function renderRecords() {
+  const rbody = document.getElementById('rec-body');
+  const sorted = [...records].sort((a,b) => b.startDate.localeCompare(a.startDate));
+  rbody.innerHTML = sorted.length
+    ? sorted.map(r => {
+        const emp = employees.find(e => e.id === r.empId);
+        const isSingle = r.startDate === r.endDate;
+        return `<tr>
+          <td style="font-weight:600;">${emp ? emp.name : '(삭제됨)'}</td>
+          <td><span class="badge badge-gray">${emp ? emp.dept : '—'}</span></td>
+          <td style="font-size:12px;">
+            ${r.type === 'half'
+              ? `<span class="badge badge-amber">반차</span> <span class="badge badge-teal">${r.startDate}</span>`
+              : `<span class="badge badge-teal">${r.startDate}</span>${!isSingle ? `<span style="color:#aaa; margin:0 3px;">~</span><span class="badge badge-teal">${r.endDate}</span>` : ''}`
+            }
+          </td>
+          <td><strong>${r.days}일</strong></td>
+          <td style="color:#888;">${r.reason||'—'}</td>
+          <td style="white-space:nowrap;">
+            <button class="btn btn-sm" onclick="openRecEditModal('${r.id}')">수정</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteRecord('${r.id}')">삭제</button>
+          </td>
+        </tr>`;
+      }).join('')
+    : '<tr><td colspan="6" class="empty">사용 기록이 없습니다</td></tr>';
+}
+
+function renderSettlements() {
+  const sbody = document.getElementById('set-body');
+  const sorted = [...settlements].sort((a,b) => b.date.localeCompare(a.date));
+  sbody.innerHTML = sorted.length
+    ? sorted.map(s => {
+        const emp = employees.find(e => e.id === s.empId);
+        return `<tr>
+          <td style="font-weight:600;">${emp ? emp.name : '(삭제됨)'}</td>
+          <td><span class="badge badge-gray">${emp ? emp.dept : '—'}</span></td>
+          <td>${s.date}</td>
+          <td><span class="badge badge-purple">${s.days}일</span></td>
+          <td style="color:#888;">${s.note||'—'}</td>
+          <td style="white-space:nowrap;">
+            <button class="btn btn-sm" onclick="openSetEditModal('${s.id}')">수정</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteSettlement('${s.id}')">삭제</button>
+          </td>
+        </tr>`;
+      }).join('')
+    : '<tr><td colspan="6" class="empty">정산 기록이 없습니다</td></tr>';
+}
+
+function addEmployee() {
+  const name = document.getElementById('emp-name').value.trim();
+  const dept = document.getElementById('emp-dept').value.trim();
+  const joinDate = document.getElementById('emp-join').value;
+  if (!name || !dept || !joinDate) return alert('이름, 부서, 입사일을 모두 입력하세요.');
+  employees.push({ id: Date.now().toString(), name, dept, joinDate });
+  document.getElementById('emp-name').value = '';
+  document.getElementById('emp-dept').value = '';
+  document.getElementById('emp-join').value = '';
+  save(); render();
+}
+
+function deleteEmployee(id) {
+  if (!confirm('직원을 삭제하면 사용·정산 기록도 함께 삭제됩니다. 계속할까요?')) return;
+  employees   = employees.filter(e => e.id !== id);
+  records     = records.filter(r => r.empId !== id);
+  settlements = settlements.filter(s => s.empId !== id);
+  save(); render();
+}
+
+function addRecord() {
+  const empId  = document.getElementById('rec-emp').value;
+  const type   = document.getElementById('rec-type').value;
+  const reason = document.getElementById('rec-reason').value.trim();
+  if (!empId) return alert('직원을 선택하세요.');
+
+  let startDate, endDate, days;
+
+  if (type === 'half') {
+    const date = document.getElementById('rec-half-date').value;
+    if (!date) return alert('날짜를 입력하세요.');
+    startDate = date; endDate = date; days = 0.5;
+  } else {
+    startDate = document.getElementById('rec-start').value;
+    endDate   = document.getElementById('rec-end').value;
+    if (!startDate) return alert('시작일을 입력하세요.');
+    const finalEnd = endDate || startDate;
+    if (finalEnd < startDate) return alert('종료일이 시작일보다 앞에 있어요.');
+    days = calcWorkdays(startDate, finalEnd);
+    if (!days || days <= 0) return alert('종료일이 시작일보다 앞에 있어요.');
+    endDate = finalEnd;
+  }
+
+  const emp = employees.find(e => e.id === empId);
+  const { total } = calcLeave(emp.joinDate);
+  const rem = total - usedDays(empId) - settledDays(empId);
+  if (days > rem) return alert(`잔여 연차(${rem}일)보다 많이 사용할 수 없습니다.`);
+
+  records.push({ id: Date.now().toString(), empId, startDate, endDate, days, reason, type });
+  document.getElementById('rec-reason').value = '';
+  document.getElementById('rec-start').value  = '';
+  document.getElementById('rec-end').value    = '';
+  document.getElementById('rec-half-date').value = '';
+  document.getElementById('days-preview').textContent = '—';
+  document.getElementById('rec-type').value = 'full';
+  document.getElementById('rec-emp-input').value = '';
+  document.getElementById('rec-emp').value = '';
+  onTypeChange();
+  save(); render();
+}
+
+function deleteRecord(id) {
+  if (!confirm('이 기록을 삭제할까요?')) return;
+  records = records.filter(r => r.id !== id);
+  save(); render();
+}
+
+// 입력 모드 전환
+function switchRecMode(mode, el) {
+  document.querySelectorAll('.tab-switch-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  ['single','bulk','csv'].forEach(m => {
+    document.getElementById(`rec-mode-${m}`).classList.toggle('hidden', m !== mode);
+  });
+  if (mode === 'bulk') initBulkRows();
+}
+
+// 일괄 직접 입력
+let bulkRows = [];
+function initBulkRows() {
+  bulkRows = [];
+  for (let i = 0; i < 3; i++) bulkRows.push({ id: Date.now() + i });
+  renderBulkRows();
+}
+function addBulkRow() {
+  bulkRows.push({ id: Date.now() });
+  renderBulkRows();
+}
+function removeBulkRow(idx) {
+  bulkRows.splice(idx, 1);
+  renderBulkRows();
+}
+function renderBulkRows() {
+  const empOptions = employees.map(e => `<option value="${e.id}">${e.name} (${e.dept})</option>`).join('');
+  document.getElementById('bulk-body').innerHTML = bulkRows.map((_, i) => `
+    <tr>
+      <td><button class="btn btn-sm btn-danger" onclick="removeBulkRow(${i})" style="padding:2px 7px;">✕</button></td>
+      <td><select class="bulk-emp" data-idx="${i}" onchange="updateBulkDays(${i})" style="min-width:110px;">
+        <option value="">선택</option>${empOptions}
+      </select></td>
+      <td><select class="bulk-type" data-idx="${i}" onchange="updateBulkDays(${i})">
+        <option value="full">연차</option>
+        <option value="half">반차</option>
+      </select></td>
+      <td><input type="date" class="bulk-start" data-idx="${i}" oninput="updateBulkDays(${i})" /></td>
+      <td><input type="date" class="bulk-end" data-idx="${i}" oninput="updateBulkDays(${i})" /></td>
+      <td><input type="text" class="bulk-reason" data-idx="${i}" placeholder="사유" /></td>
+      <td><span class="bulk-days" id="bulk-days-${i}" style="font-size:13px; color:#185FA5; font-weight:600;">—</span></td>
+    </tr>`).join('');
+}
+function updateBulkDays(i) {
+  const type  = document.querySelector(`.bulk-type[data-idx="${i}"]`).value;
+  const start = document.querySelector(`.bulk-start[data-idx="${i}"]`).value;
+  const end   = document.querySelector(`.bulk-end[data-idx="${i}"]`).value;
+  const span  = document.getElementById(`bulk-days-${i}`);
+  if (type === 'half') { span.textContent = '0.5일'; return; }
+  if (start && end) { const d = calcWorkdays(start, end); span.textContent = d > 0 ? `${d}일` : '—'; }
+  else if (start)   { span.textContent = '1일'; }
+  else              { span.textContent = '—'; }
+}
+function submitBulk() {
+  const rows = document.querySelectorAll('#bulk-body tr');
+  let added = 0, errors = [];
+  rows.forEach((_, i) => {
+    const empId  = document.querySelector(`.bulk-emp[data-idx="${i}"]`).value;
+    const type   = document.querySelector(`.bulk-type[data-idx="${i}"]`).value;
+    const start  = document.querySelector(`.bulk-start[data-idx="${i}"]`).value;
+    const end    = document.querySelector(`.bulk-end[data-idx="${i}"]`).value;
+    const reason = document.querySelector(`.bulk-reason[data-idx="${i}"]`).value.trim();
+    if (!empId && !start) return;
+    if (!empId) { errors.push(`${i+1}행: 직원을 선택하세요.`); return; }
+    if (!start) { errors.push(`${i+1}행: 시작일을 입력하세요.`); return; }
+    let startDate, endDate, days;
+    if (type === 'half') {
+      startDate = start; endDate = start; days = 0.5;
+    } else {
+      const finalEnd = end || start;
+      days = calcWorkdays(start, finalEnd);
+      if (!days || days <= 0) { errors.push(`${i+1}행: 날짜를 확인하세요.`); return; }
+      startDate = start; endDate = finalEnd;
+    }
+    const emp = employees.find(e => e.id === empId);
+    const { total } = calcLeave(emp.joinDate);
+    const rem = total - usedDays(empId) - settledDays(empId);
+    if (days > rem) { errors.push(`${i+1}행 (${emp.name}): 잔여 연차 부족 (잔여 ${rem}일)`); return; }
+    records.push({ id: Date.now().toString() + i, empId, startDate, endDate, days, reason, type });
+    added++;
+  });
+  if (errors.length) { alert(`오류:\n${errors.join('\n')}`); }
+  if (added > 0) { save(); render(); initBulkRows(); alert(`${added}건 등록 완료!`); }
+}
+
+// CSV 업로드
+let csvPendingRows = [];
+function downloadRecTemplate() {
+  const csv = '\uFEFF이름,시작일,종료일,사유\n홍길동,2025-03-10,2025-03-12,개인사정\n김철수,2025-03-14,2025-03-14,병원\n';
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8;'}));
+  a.download = '연차사용기록_양식.csv'; a.click();
+}
+function uploadRecCSV(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const lines = ev.target.result.replace(/^\uFEFF/,'').split('\n').map(l=>l.trim()).filter(Boolean);
+    csvPendingRows = [];
+    const previewBody = document.getElementById('csv-preview-body');
+    previewBody.innerHTML = '';
+    let hasData = false;
+    for (let i = 1; i < lines.length; i++) {
+      const cols = lines[i].split(',').map(c => c.trim());
+      if (cols.length < 2) continue;
+      const name   = cols[0];
+      const start  = cols[1];
+      const end    = cols[2] || cols[1];
+      const reason = cols[3] || '';
+      const emp    = employees.find(e => e.name === name);
+      const days   = (start && end) ? calcWorkdays(start, end) : null;
+      let status, statusColor;
+      if (!emp)          { status = '직원 없음'; statusColor = '#A32D2D'; }
+      else if (!days)    { status = '날짜 오류'; statusColor = '#A32D2D'; }
+      else {
+        const { total } = calcLeave(emp.joinDate);
+        const rem = total - usedDays(emp.id) - settledDays(emp.id);
+        if (days > rem)  { status = `잔여 부족(${rem}일)`; statusColor = '#854F0B'; }
+        else             { status = '✓ 등록 가능'; statusColor = '#3B6D11'; }
+      }
+      csvPendingRows.push({ name, start, end, reason, emp, days });
+      previewBody.innerHTML += `<tr>
+        <td style="color:#aaa; font-size:12px;">${i}</td>
+        <td style="font-weight:600;">${name}</td>
+        <td style="font-size:12px;">${start}</td>
+        <td style="font-size:12px;">${end !== start ? end : '—'}</td>
+        <td>${days || '—'}일</td>
+        <td style="color:#888;">${reason || '—'}</td>
+        <td style="color:${statusColor}; font-size:12px; font-weight:500;">${status}</td>
+      </tr>`;
+      hasData = true;
+    }
+    document.getElementById('csv-preview-wrap').classList.toggle('hidden', !hasData);
+    document.getElementById('csv-upload-status').textContent = hasData ? `${csvPendingRows.length}건 감지됨` : '유효한 데이터가 없습니다.';
+  };
+  reader.readAsText(file, 'UTF-8');
+  e.target.value = '';
+}
+function confirmCSVUpload() {
+  let added = 0, skipped = 0;
+  csvPendingRows.forEach((row, i) => {
+    if (!row.emp || !row.days) { skipped++; return; }
+    const { total } = calcLeave(row.emp.joinDate);
+    const rem = total - usedDays(row.emp.id) - settledDays(row.emp.id);
+    if (row.days > rem) { skipped++; return; }
+    records.push({ id: Date.now().toString()+i, empId: row.emp.id, startDate: row.start, endDate: row.end, days: row.days, reason: row.reason, type: 'full' });
+    added++;
+  });
+  save(); render();
+  document.getElementById('csv-preview-wrap').classList.add('hidden');
+  document.getElementById('csv-upload-status').textContent = '';
+  csvPendingRows = [];
+  alert(`${added}건 등록 완료${skipped ? `, ${skipped}건 건너뜀` : ''}!`);
+}
+function cancelCSVUpload() {
+  csvPendingRows = [];
+  document.getElementById('csv-preview-wrap').classList.add('hidden');
+  document.getElementById('csv-upload-status').textContent = '';
+}
+
+
+
+function addSettlement() {
+  const empId = document.getElementById('set-emp').value;
+  const date  = document.getElementById('set-date').value;
+  const days  = parseFloat(document.getElementById('set-days').value);
+  const note  = document.getElementById('set-note').value.trim();
+  if (!empId || !date || !days) return alert('직원, 날짜, 정산 일수를 입력하세요.');
+  const emp = employees.find(e => e.id === empId);
+  const { total } = calcLeave(emp.joinDate);
+  const rem = total - usedDays(empId) - settledDays(empId);
+  if (days > rem) return alert(`잔여 연차(${rem}일)보다 많은 일수를 정산할 수 없습니다.`);
+  settlements.push({ id: Date.now().toString(), empId, date, days, note });
+  document.getElementById('set-days').value = '1';
+  document.getElementById('set-note').value = '';
+  document.getElementById('set-emp-input').value = '';
+  document.getElementById('set-emp').value = '';
+  save(); render();
+}
+
+function deleteSettlement(id) {
+  if (!confirm('정산 기록을 삭제할까요?')) return;
+  settlements = settlements.filter(s => s.id !== id);
+  save(); render();
+}
+
+function showHistory(empId) {
+  const emp = employees.find(e => e.id === empId);
+  const { total, tenure } = calcLeave(emp.joinDate);
+  const u  = usedDays(empId), st = settledDays(empId);
+  const recs = [...records.filter(r => r.empId === empId)].sort((a,b) => b.startDate.localeCompare(a.startDate));
+  const sets = [...settlements.filter(s => s.empId === empId)].sort((a,b) => b.date.localeCompare(a.date));
+  document.getElementById('modal-title').textContent = `${emp.name} 연차 상세 내역`;
+  document.getElementById('modal-body').innerHTML = `
+    <div style="background:#f5f5f3;border-radius:8px;padding:10px 14px;margin-bottom:1rem;font-size:13px;">
+      입사일: <strong>${emp.joinDate}</strong> &nbsp;·&nbsp; 근속: <strong>${tenure}</strong> &nbsp;·&nbsp; 부서: <strong>${emp.dept}</strong>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:1.25rem;">
+      <div class="stat-card"><div class="stat-label">누적 연차</div><div class="stat-val" style="font-size:18px;">${total}일</div></div>
+      <div class="stat-card"><div class="stat-label">사용</div><div class="stat-val" style="font-size:18px;">${u}일</div></div>
+      <div class="stat-card"><div class="stat-label">정산</div><div class="stat-val" style="font-size:18px;color:#3C3489;">${st}일</div></div>
+      <div class="stat-card"><div class="stat-label">잔여</div><div class="stat-val" style="font-size:18px;">${total-u-st}일</div></div>
+    </div>
+    <div style="font-size:13px;font-weight:600;margin-bottom:8px;">사용 기록</div>
+    ${recs.length
+      ? `<table style="margin-bottom:1rem;"><thead><tr><th>기간</th><th>일수</th><th>사유</th></tr></thead><tbody>
+         ${recs.map(r=>`<tr>
+           <td style="font-size:12px;">${r.startDate===r.endDate ? r.startDate : r.startDate+' ~ '+r.endDate}</td>
+           <td><strong>${r.days}일</strong></td>
+           <td style="color:#888;">${r.reason||'—'}</td>
+         </tr>`).join('')}</tbody></table>`
+      : `<p style="color:#bbb;font-size:13px;margin-bottom:1rem;">사용 기록 없음</p>`}
+    <div style="font-size:13px;font-weight:600;margin-bottom:8px;">정산 기록</div>
+    ${sets.length
+      ? `<table><thead><tr><th>날짜</th><th>일수</th><th>메모</th></tr></thead><tbody>
+         ${sets.map(s=>`<tr>
+           <td>${s.date}</td>
+           <td><span class="badge badge-purple">${s.days}일</span></td>
+           <td style="color:#888;">${s.note||'—'}</td>
+         </tr>`).join('')}</tbody></table>`
+      : `<p style="color:#bbb;font-size:13px;">정산 기록 없음</p>`}
+  `;
+  document.getElementById('modal').classList.add('show');
+}
+
+function openEditModal(id) {
+  const emp = employees.find(e => e.id === id);
+  if (!emp) return;
+  document.getElementById('edit-name').value = emp.name;
+  document.getElementById('edit-dept').value = emp.dept;
+  document.getElementById('edit-join').value = emp.joinDate;
+  document.getElementById('edit-modal').dataset.empId = id;
+  document.getElementById('edit-modal').classList.add('show');
+}
+
+function closeEditModal() {
+  document.getElementById('edit-modal').classList.remove('show');
+}
+
+function saveEdit() {
+  const id   = document.getElementById('edit-modal').dataset.empId;
+  const name = document.getElementById('edit-name').value.trim();
+  const dept = document.getElementById('edit-dept').value.trim();
+  const join = document.getElementById('edit-join').value;
+  if (!name || !dept || !join) return alert('이름, 부서, 입사일을 모두 입력하세요.');
+  const emp = employees.find(e => e.id === id);
+  emp.name = name; emp.dept = dept; emp.joinDate = join;
+  save(); render(); closeEditModal();
+}
+
+function closeModal() { document.getElementById('modal').classList.remove('show'); }
+
+// 사용기록 수정
+function openRecEditModal(id) {
+  const r = records.find(x => x.id === id);
+  if (!r) return;
+  document.getElementById('rec-edit-modal').dataset.recId = id;
+  document.getElementById('rec-edit-type').value = r.type || 'full';
+  document.getElementById('rec-edit-reason').value = r.reason || '';
+  onRecEditTypeChange();
+  if (r.type === 'half') {
+    document.getElementById('rec-edit-half-date').value = r.startDate;
+  } else {
+    document.getElementById('rec-edit-start').value = r.startDate;
+    document.getElementById('rec-edit-end').value   = r.endDate;
+  }
+  onRecEditDateChange();
+  document.getElementById('rec-edit-modal').classList.add('show');
+}
+
+function onRecEditTypeChange() {
+  const isHalf = document.getElementById('rec-edit-type').value === 'half';
+  document.getElementById('rec-edit-range-group').style.display = isHalf ? 'none' : '';
+  document.getElementById('rec-edit-half-group').style.display  = isHalf ? '' : 'none';
+  document.getElementById('rec-edit-days-preview').textContent  = isHalf ? '0.5일' : '';
+}
+
+function onRecEditDateChange() {
+  const s = document.getElementById('rec-edit-start').value;
+  const e = document.getElementById('rec-edit-end').value;
+  const p = document.getElementById('rec-edit-days-preview');
+  if (s && e) { const d = calcWorkdays(s, e); p.textContent = d && d > 0 ? `${d}일` : '—'; }
+  else if (s) p.textContent = '1일';
+}
+
+function closeRecEditModal() { document.getElementById('rec-edit-modal').classList.remove('show'); }
+
+function saveRecEdit() {
+  const id   = document.getElementById('rec-edit-modal').dataset.recId;
+  const r    = records.find(x => x.id === id);
+  const type = document.getElementById('rec-edit-type').value;
+  const reason = document.getElementById('rec-edit-reason').value.trim();
+
+  let startDate, endDate, days;
+  if (type === 'half') {
+    const date = document.getElementById('rec-edit-half-date').value;
+    if (!date) return alert('날짜를 입력하세요.');
+    startDate = date; endDate = date; days = 0.5;
+  } else {
+    startDate = document.getElementById('rec-edit-start').value;
+    endDate   = document.getElementById('rec-edit-end').value;
+    if (!startDate) return alert('시작일을 입력하세요.');
+    const finalEnd = endDate || startDate;
+    if (finalEnd < startDate) return alert('종료일이 시작일보다 앞에 있어요.');
+    days = calcWorkdays(startDate, finalEnd);
+    if (!days || days <= 0) return alert('종료일이 시작일보다 앞에 있어요.');
+    endDate = finalEnd;
+  }
+
+  const emp = employees.find(e => e.id === r.empId);
+  const { total } = calcLeave(emp.joinDate);
+  const otherUsed = records.filter(x => x.empId === r.empId && x.id !== id).reduce((s,x) => s+x.days, 0);
+  const settled   = settledDays(r.empId);
+  const rem = total - otherUsed - settled;
+  if (days > rem) return alert(`잔여 연차(${rem}일)보다 많이 사용할 수 없습니다.`);
+
+  r.type = type; r.startDate = startDate; r.endDate = endDate; r.days = days; r.reason = reason;
+  save(); render(); closeRecEditModal();
+}
+
+// 정산기록 수정
+function openSetEditModal(id) {
+  const s = settlements.find(x => x.id === id);
+  if (!s) return;
+  document.getElementById('set-edit-modal').dataset.setId = id;
+  document.getElementById('set-edit-date').value  = s.date;
+  document.getElementById('set-edit-days').value  = s.days;
+  document.getElementById('set-edit-note').value  = s.note || '';
+  document.getElementById('set-edit-modal').classList.add('show');
+}
+
+function closeSetEditModal() { document.getElementById('set-edit-modal').classList.remove('show'); }
+
+function saveSetEdit() {
+  const id   = document.getElementById('set-edit-modal').dataset.setId;
+  const s    = settlements.find(x => x.id === id);
+  const date = document.getElementById('set-edit-date').value;
+  const days = parseFloat(document.getElementById('set-edit-days').value);
+  const note = document.getElementById('set-edit-note').value.trim();
+  if (!date || !days) return alert('날짜와 일수를 입력하세요.');
+
+  const emp = employees.find(e => e.id === s.empId);
+  const { total } = calcLeave(emp.joinDate);
+  const otherSettled = settlements.filter(x => x.empId === s.empId && x.id !== id).reduce((a,x) => a+x.days, 0);
+  const used = usedDays(s.empId);
+  const rem  = total - used - otherSettled;
+  if (days > rem) return alert(`잔여 연차(${rem}일)보다 많은 일수를 정산할 수 없습니다.`);
+
+  s.date = date; s.days = days; s.note = note;
+  save(); render(); closeSetEditModal();
+}
+
+function switchTab(tab, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  ['employees','dept','person','records','settlements'].forEach(t => {
+    document.getElementById('tab-'+t).classList.toggle('hidden', t !== tab);
+  });
+  if (tab === 'dept')   renderDept();
+  if (tab === 'person') { updateSelects(); renderPerson(); }
+}
+
+function exportCSV() {
+  if (!employees.length) return alert('직원 데이터가 없습니다.');
+  let csv = '\uFEFF이름,부서,입사일,근속,누적연차,사용연차,정산연차,잔여연차\n';
+  employees.forEach(e => {
+    const { total, tenure } = calcLeave(e.joinDate);
+    const u = usedDays(e.id), st = settledDays(e.id);
+    csv += `${e.name},${e.dept},${e.joinDate},${tenure},${total},${u},${st},${total-u-st}\n`;
+  });
+  csv += '\n사용기록\n이름,시작일,종료일,일수,사유\n';
+  records.forEach(r => {
+    const emp = employees.find(e => e.id === r.empId);
+    csv += `${emp?emp.name:'(삭제됨)'},${r.startDate},${r.endDate},${r.days},${r.reason||''}\n`;
+  });
+  csv += '\n정산기록\n이름,날짜,일수,메모\n';
+  settlements.forEach(s => {
+    const emp = employees.find(e => e.id === s.empId);
+    csv += `${emp?emp.name:'(삭제됨)'},${s.date},${s.days},${s.note||''}\n`;
+  });
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = '연차관리_'+todayStr+'.csv'; a.click();
+}
+
+function importCSV(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const lines = ev.target.result.replace(/^\uFEFF/,'').split('\n').map(l=>l.trim()).filter(Boolean);
+    const newEmps = []; let mode = 'emp';
+    for (let i = 1; i < lines.length; i++) {
+      const cols = lines[i].split(',');
+      if (lines[i].startsWith('사용기록') || lines[i].startsWith('정산기록')) { mode='skip'; continue; }
+      if (mode === 'emp' && cols.length >= 3 && cols[2].match(/\d{4}-\d{2}-\d{2}/)) {
+        if (!employees.find(ex => ex.name === cols[0]))
+          newEmps.push({ id: Date.now().toString()+i, name: cols[0], dept: cols[1], joinDate: cols[2] });
+      }
+    }
+    if (newEmps.length) { employees = [...employees, ...newEmps]; save(); render(); alert(`${newEmps.length}명 불러왔습니다.`); }
+    else alert('불러올 데이터가 없거나 이미 등록된 직원입니다.');
+  };
+  reader.readAsText(file, 'UTF-8'); e.target.value = '';
+}
+
+document.getElementById('set-date').value = todayStr;
+loadAll();
+</script>
+</body>
+</html>
