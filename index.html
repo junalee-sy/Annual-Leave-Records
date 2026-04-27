@@ -511,22 +511,32 @@ let employees   = [];
 let records     = [];
 let settlements = [];
 
-const API_URL = 'https://script.google.com/macros/s/AKfycbxtkdraCfdEDkf6ARtCRLXjTh3qbMWXX7VE4KER_aV5w64woNvNnSBLTOPIoePmMoGnfQ/exec';
+const SUPA_URL = 'https://cqhaoojnlxjyuiqlqnbc.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxaGFvb2pubHhqeXVpcWxxbmJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyNjgwMjQsImV4cCI6MjA5Mjg0NDAyNH0.CvlNz6fS7WhkyI35qxhcmh9vmYG3RSQXMf_6a5oRMfM';
+const HEADERS  = { 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` };
 
 function setStatus(msg, color) {
   const el = document.getElementById('sync-status');
   if (el) { el.textContent = msg; el.style.color = color || '#888'; }
 }
 
+async function sbFetch(path, options = {}) {
+  const res = await fetch(`${SUPA_URL}/rest/v1/${path}`, { headers: HEADERS, ...options });
+  if (!res.ok) throw new Error(await res.text());
+  return res.status === 204 ? null : res.json();
+}
+
 async function loadAll() {
   setStatus('불러오는 중...', '#185FA5');
   try {
-    const res  = await fetch(`${API_URL}?action=getAll`);
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
-    employees   = data.employees   || [];
-    records     = data.records     || [];
-    settlements = data.settlements || [];
+    const [emps, recs, sets] = await Promise.all([
+      sbFetch('employees?select=*&order=name'),
+      sbFetch('records?select=*&order=startDate'),
+      sbFetch('settlements?select=*&order=date'),
+    ]);
+    employees   = emps  || [];
+    records     = recs  || [];
+    settlements = sets  || [];
     records.forEach(r => r.days = parseFloat(r.days) || 0);
     settlements.forEach(s => s.days = parseFloat(s.days) || 0);
     // 로컬 백업
@@ -545,19 +555,26 @@ async function loadAll() {
 }
 
 async function save() {
-  // 로컬 백업 먼저
+  // 로컬 백업
   localStorage.setItem('leave_emp', JSON.stringify(employees));
   localStorage.setItem('leave_rec', JSON.stringify(records));
   localStorage.setItem('leave_set', JSON.stringify(settlements));
-  // Sheets 저장
   setStatus('저장 중...', '#185FA5');
   try {
-    const res  = await fetch(API_URL, { method:'POST', body: JSON.stringify({ action:'saveAll', employees, records, settlements }) });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
+    await Promise.all([
+      sbFetch('employees', { method: 'DELETE', headers: { ...HEADERS, 'Prefer': 'return=minimal' }, body: JSON.stringify({}) }),
+      sbFetch('records',   { method: 'DELETE', headers: { ...HEADERS, 'Prefer': 'return=minimal' }, body: JSON.stringify({}) }),
+      sbFetch('settlements',{ method: 'DELETE', headers: { ...HEADERS, 'Prefer': 'return=minimal' }, body: JSON.stringify({}) }),
+    ]);
+    await Promise.all([
+      employees.length   && sbFetch('employees',   { method: 'POST', headers: { ...HEADERS, 'Prefer': 'return=minimal' }, body: JSON.stringify(employees) }),
+      records.length     && sbFetch('records',     { method: 'POST', headers: { ...HEADERS, 'Prefer': 'return=minimal' }, body: JSON.stringify(records) }),
+      settlements.length && sbFetch('settlements', { method: 'POST', headers: { ...HEADERS, 'Prefer': 'return=minimal' }, body: JSON.stringify(settlements) }),
+    ]);
     setStatus('✓ 동기화됨', '#3B6D11');
   } catch(e) {
     setStatus('⚠ 저장 실패 (로컬만 저장됨)', '#A32D2D');
+    console.error(e);
   }
 }
 
