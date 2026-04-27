@@ -153,10 +153,14 @@ tr:hover td { background: #fafafa; }
 
 <header>
   <h1>📋 직원 연차 관리</h1>
-  <div style="display:flex; align-items:center; gap:8px;">
-    <label style="font-size:12px; color:#888; white-space:nowrap;">기준 날짜</label>
-    <input type="date" id="base-date" style="font-size:13px; padding:4px 8px; border:1px solid #e0e0e0; border-radius:8px; background:#fff; color:#1a1a1a; outline:none;" onchange="onBaseDateChange()" />
-    <button onclick="resetBaseDate()" style="font-size:12px; color:#888; background:none; border:none; cursor:pointer; padding:4px 6px; border-radius:6px;" title="오늘로 초기화">↺</button>
+  <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+    <span id="sync-status" style="font-size:12px; color:#888;">불러오는 중...</span>
+    <button onclick="loadAll()" style="font-size:12px; color:#888; background:none; border:1px solid #e0e0e0; border-radius:6px; cursor:pointer; padding:4px 10px;">↻ 새로고침</button>
+    <div style="display:flex; align-items:center; gap:6px;">
+      <label style="font-size:12px; color:#888; white-space:nowrap;">기준 날짜</label>
+      <input type="date" id="base-date" style="font-size:13px; padding:4px 8px; border:1px solid #e0e0e0; border-radius:8px; background:#fff; color:#1a1a1a; outline:none;" onchange="onBaseDateChange()" />
+      <button onclick="resetBaseDate()" style="font-size:12px; color:#888; background:none; border:none; cursor:pointer; padding:4px 6px; border-radius:6px;" title="오늘로 초기화">↺</button>
+    </div>
   </div>
 </header>
 
@@ -503,14 +507,58 @@ function resetBaseDate() {
   render();
 }
 
-let employees   = JSON.parse(localStorage.getItem('leave_emp')  || '[]');
-let records     = JSON.parse(localStorage.getItem('leave_rec')  || '[]');
-let settlements = JSON.parse(localStorage.getItem('leave_set')  || '[]');
+let employees   = [];
+let records     = [];
+let settlements = [];
 
-function save() {
+const API_URL = 'https://script.google.com/macros/s/AKfycbxtkdraCfdEDkf6ARtCRLXjTh3qbMWXX7VE4KER_aV5w64woNvNnSBLTOPIoePmMoGnfQ/exec';
+
+function setStatus(msg, color) {
+  const el = document.getElementById('sync-status');
+  if (el) { el.textContent = msg; el.style.color = color || '#888'; }
+}
+
+async function loadAll() {
+  setStatus('불러오는 중...', '#185FA5');
+  try {
+    const res  = await fetch(`${API_URL}?action=getAll`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    employees   = data.employees   || [];
+    records     = data.records     || [];
+    settlements = data.settlements || [];
+    records.forEach(r => r.days = parseFloat(r.days) || 0);
+    settlements.forEach(s => s.days = parseFloat(s.days) || 0);
+    // 로컬 백업
+    localStorage.setItem('leave_emp', JSON.stringify(employees));
+    localStorage.setItem('leave_rec', JSON.stringify(records));
+    localStorage.setItem('leave_set', JSON.stringify(settlements));
+    setStatus('✓ 동기화됨', '#3B6D11');
+    render();
+  } catch(e) {
+    setStatus('⚠ 오프라인 — 로컬 데이터 사용 중', '#854F0B');
+    employees   = JSON.parse(localStorage.getItem('leave_emp') || '[]');
+    records     = JSON.parse(localStorage.getItem('leave_rec') || '[]');
+    settlements = JSON.parse(localStorage.getItem('leave_set') || '[]');
+    render();
+  }
+}
+
+async function save() {
+  // 로컬 백업 먼저
   localStorage.setItem('leave_emp', JSON.stringify(employees));
   localStorage.setItem('leave_rec', JSON.stringify(records));
   localStorage.setItem('leave_set', JSON.stringify(settlements));
+  // Sheets 저장
+  setStatus('저장 중...', '#185FA5');
+  try {
+    const res  = await fetch(API_URL, { method:'POST', body: JSON.stringify({ action:'saveAll', employees, records, settlements }) });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    setStatus('✓ 동기화됨', '#3B6D11');
+  } catch(e) {
+    setStatus('⚠ 저장 실패 (로컬만 저장됨)', '#A32D2D');
+  }
 }
 
 function calcLeave(joinDateStr) {
@@ -1328,7 +1376,7 @@ function importCSV(e) {
 }
 
 document.getElementById('set-date').value = todayStr;
-render();
+loadAll();
 </script>
 </body>
 </html>
