@@ -343,6 +343,16 @@ tr:hover td { background: #fafafa; }
       </div>
     </div>
 
+    <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+      <span style="font-size:13px; color:#888;">정렬:</span>
+      <select id="rec-sort" onchange="renderRecords()" style="font-size:13px; padding:5px 10px; border:1px solid #e0e0e0; border-radius:8px;">
+        <option value="date-desc">날짜 최신순</option>
+        <option value="date-asc">날짜 오래된순</option>
+        <option value="reg-desc">등록순 (최신)</option>
+        <option value="reg-asc">등록순 (오래된)</option>
+        <option value="name">이름순</option>
+      </select>
+    </div>
     <div class="table-wrap">
       <table>
         <thead><tr><th>이름</th><th>부서</th><th>기간</th><th>일수</th><th>사유</th><th></th></tr></thead>
@@ -873,8 +883,20 @@ function renderPerson() {
 }
 
 function renderRecords() {
-  const rbody = document.getElementById('rec-body');
-  const sorted = [...records].sort((a,b) => b.startDate.localeCompare(a.startDate));
+  const rbody  = document.getElementById('rec-body');
+  const sortBy = document.getElementById('rec-sort')?.value || 'date-desc';
+  let sorted = [...records];
+  if      (sortBy === 'date-desc') sorted.sort((a,b) => b.startDate.localeCompare(a.startDate));
+  else if (sortBy === 'date-asc')  sorted.sort((a,b) => a.startDate.localeCompare(b.startDate));
+  else if (sortBy === 'reg-desc')  sorted.sort((a,b) => b.id.localeCompare(a.id));
+  else if (sortBy === 'reg-asc')   sorted.sort((a,b) => a.id.localeCompare(b.id));
+  else if (sortBy === 'name') {
+    sorted.sort((a,b) => {
+      const ea = employees.find(e => e.id === a.empId);
+      const eb = employees.find(e => e.id === b.empId);
+      return (ea?.name || '').localeCompare(eb?.name || '');
+    });
+  }
   rbody.innerHTML = sorted.length
     ? sorted.map(r => {
         const emp = employees.find(e => e.id === r.empId);
